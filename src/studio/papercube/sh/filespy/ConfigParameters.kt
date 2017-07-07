@@ -1,3 +1,5 @@
+//TODO: FUCK THIS FUNCTIONALITY
+
 package studio.papercube.sh.filespy
 
 import java.io.File
@@ -8,12 +10,8 @@ import java.util.concurrent.CompletableFuture
 import java.util.stream.Stream
 import kotlin.reflect.KProperty
 
-class ConfigParameters @JvmOverloads constructor(val property: PropertyMap = PropertyMap()) {
+abstract class AbstractConfigParameters(val property: PropertyMap) {
     companion object {
-        val instance by lazy {
-            ConfigParameters.resolve(File(CONFIG_PATH))
-        }
-
         fun resolve(file: File): ConfigParameters {
             try {
                 return resolve(FileReader(file).buffered(bufferSize = 8192).lines())
@@ -37,9 +35,9 @@ class ConfigParameters @JvmOverloads constructor(val property: PropertyMap = Pro
     @Volatile private var lastSave: Long = System.currentTimeMillis()
     private val SAVE_INTERVAL_THRESHOLD = 3000L
 
-    operator fun get(key: String) = property[key]
+    operator open fun get(key: String) = property[key]
 
-    operator fun set(key: String, value: String) = { property[key] = value }
+    operator open fun set(key: String, value: String) = { property[key] = value }
 
     fun computeIfAbsent(key: String, lazyValue: (String) -> String): String {
         return property.computeIfAbsent(key, lazyValue)
@@ -58,27 +56,34 @@ class ConfigParameters @JvmOverloads constructor(val property: PropertyMap = Pro
         CompletableFuture.supplyAsync { save() }
     }
 
-    fun saveAsyncIfNecessary() {
+    open fun saveAsyncIfNecessary() {
         if (System.currentTimeMillis() - lastSave < SAVE_INTERVAL_THRESHOLD) saveAsync()
     }
-
-    var regex: String by propertyWithInitial("regex", DEFAULT_REGEX)
-
-    var dataPath by propertyWithInitial("dataPath", DATA_PATH)
 
 
     fun propertyWithInitial(key: String, initial: String) = ParameterControl(key, initial, property)
 
     @Suppress("NOTHING_TO_INLINE")
-    class ParameterControl<R>(val key: String, val initial: R, val map: MutableMap<String, R>) {
+    open class ParameterControl<R>(val key: String, val initial: R, val map: MutableMap<String, R>) {
         inline operator fun getValue(thisRef: Any?, property: KProperty<*>): R {
             return map.computeIfAbsent(key) { initial }
         }
 
         inline operator fun setValue(thisRef: Any?, property: KProperty<*>, value: R) {
             map[key] = value
-            (thisRef as? ConfigParameters)?.saveAsyncIfNecessary()
+            (thisRef as? AbstractConfigParameters)?.saveAsyncIfNecessary()
+        }
+    }
+}
+
+open class ConfigParameters @JvmOverloads constructor(property: PropertyMap = PropertyMap()) : AbstractConfigParameters(property) {
+    companion object {
+        val instance by lazy {
+            AbstractConfigParameters.resolve(File(CONFIG_PATH))
         }
     }
 
+    var regex: String by propertyWithInitial("regex", DEFAULT_REGEX)
+
+    var dataPath by propertyWithInitial("dataPath", DATA_PATH)
 }

