@@ -32,8 +32,10 @@ abstract class AbstractConfigParameters(val property: PropertyMap) {
         saveAsync()
     }
 
-    @Volatile private var lastSave: Long = System.currentTimeMillis()
-    private val SAVE_INTERVAL_THRESHOLD = 3000L
+    @Volatile 
+    private var lastSave: Long = System.currentTimeMillis()
+    var saveIntervalThreshold = 3000L
+    private val environment:Environment = Environment.environment
 
     operator open fun get(key: String) = property[key]
 
@@ -45,7 +47,7 @@ abstract class AbstractConfigParameters(val property: PropertyMap) {
 
     fun save() {
         lastSave = System.currentTimeMillis()
-        val config = File(CONFIG_PATH)
+        val config = environment.getConfigFile()
         config.parentFile.mkdirs()
         FileWriter(config).buffered().use {
             property.forEach { key, value -> it.write("$key=$value") }
@@ -57,7 +59,7 @@ abstract class AbstractConfigParameters(val property: PropertyMap) {
     }
 
     open fun saveAsyncIfNecessary() {
-        if (System.currentTimeMillis() - lastSave < SAVE_INTERVAL_THRESHOLD) saveAsync()
+        if (System.currentTimeMillis() - lastSave < saveIntervalThreshold) saveAsync()
     }
 
 
@@ -79,11 +81,12 @@ abstract class AbstractConfigParameters(val property: PropertyMap) {
 open class ConfigParameters @JvmOverloads constructor(property: PropertyMap = PropertyMap()) : AbstractConfigParameters(property) {
     companion object {
         val instance by lazy {
-            AbstractConfigParameters.resolve(File(CONFIG_PATH))
+            AbstractConfigParameters.resolve(Environment.environment.getConfigFile())
         }
     }
 
+    @Deprecated("Use PatternManager instead.")
     var regex: String by propertyWithInitial("regex", DEFAULT_REGEX)
 
-    var dataPath by propertyWithInitial("dataPath", DATA_PATH)
+    var dataPath by propertyWithInitial("dataPath", Environment.environment.getDataStorage().absolutePath)
 }

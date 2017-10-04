@@ -29,7 +29,8 @@ class SmartTimer(interval: Long, private val task: SmartTimer.() -> Unit) {
 
     }
 
-    @JvmOverloads fun start(delay: Long = 0) {
+    @JvmOverloads
+    fun start(delay: Long = 0) {
         if (thread.isAlive) throw IllegalStateException("The driverDetector has already been started and not yet died.")
         if (delay < 0) throw IllegalArgumentException("Delay is expected positive but $delay received.")
 

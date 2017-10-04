@@ -1,5 +1,5 @@
 package studio.papercube.sh.filespy
 
-interface Theft{
+interface Theft {
     fun steal()
 }
