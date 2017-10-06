@@ -3,7 +3,7 @@ package studio.papercube.sh.filespy
 import java.util.concurrent.ConcurrentHashMap
 
 //Build info
-const val VERSION = "0.2"
+const val VERSION = "0.3"
 
 
 //Internal constants
@@ -12,9 +12,11 @@ typealias PropertyMap = ConcurrentHashMap<String, String>
 @Deprecated("Deprecated. Use patterns manager instead")
 const val DATA_PATH = "C:/ProgramData/Local/FileSpy/"
 
+@Suppress("DEPRECATION")
 @Deprecated("Deprecated. Use patterns manager instead")
 const val CONFIG_PATH = DATA_PATH + "config.txt"
 
+@Suppress("DEPRECATION")
 @Deprecated("Deprecated. Use patterns manager instead")
 const val STORAGE_PATH = DATA_PATH + "storage"
 
