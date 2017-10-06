@@ -12,6 +12,7 @@ open class PatternsManager(private val patternFile: File) {
         //language=RegExp
         val DEFAULT_PATTERN = ".*(期([中末])|考试|(月考)|(([文理])科)?.*成绩|名次|分班|排名|学生(信息)?).*\\.(xls(x)?|doc(x)?)"
         val default by lazy {
+            log.i("Initializing patterns manager")
             PatternsManager(Environment.environment.getPatternsStoreFile())
         }
     }
@@ -47,6 +48,8 @@ open class PatternsManager(private val patternFile: File) {
         } catch (e: IOException) {
             log.e(msg = "Failed to load patterns.", e = e)
         }
+
+        log.v("Done loading patterns. Patterns count = ${patterns.size}")
 
         return patterns
     }

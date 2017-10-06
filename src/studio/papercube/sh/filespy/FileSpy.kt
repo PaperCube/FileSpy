@@ -37,6 +37,7 @@ abstract class FileSpy constructor(para: Parameter) {
         private var destination = File(".")
 
         override fun start() {
+            log.enabled = false
             para.getSingleValue("-regex")?.let { regex = Pattern.compile(it).toRegex() }
             println()
             println("Select file destination. Current executable exists in ${System.getProperty("java.class.path")}")
@@ -52,6 +53,8 @@ abstract class FileSpy constructor(para: Parameter) {
                 val directories = reader.readLine().split(";").map { File(it) }
                 search(directories)
             }
+
+            log.enabled = true
         }
 
         private fun searchAll() {

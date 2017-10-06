@@ -47,6 +47,10 @@ class FileWalker(private val directory: File) {
         }
     }
 
+    fun getExceptions(): List<Throwable> {
+        return exceptions
+    }
+
     class FileTreeBuilder {
         private val stringBuilder = StringBuilder()
         var treeItemPrefix = " | "

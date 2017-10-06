@@ -18,6 +18,9 @@ abstract class Environment {
     open fun getPatternsManager() = PatternsManager.default
 
     companion object {
+        /**
+         * @throws UnsupportedOperatingSystemException if current operating system is not supported
+         */
         val environment: Environment by lazy {
             val osName: String = System.getProperty("os.name") ?: "null"
             when {
