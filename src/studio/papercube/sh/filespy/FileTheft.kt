@@ -31,6 +31,7 @@ class FileTheft(val directory: File) : Theft {
     }
 
     override fun steal() {
+        log.i("Stealing $directory on thread ${Thread.currentThread().name}")
         val patterns = PatternsManager.default.readPatterns()
         val driveMarker = DriveMarker.resolve(directory)
         val destDir = File(
@@ -49,6 +50,7 @@ class FileTheft(val directory: File) : Theft {
         val fileTreeOutput = File(destDir, "FileTree.txt").bufferedWriter()
         fileTreeOutput.write(fileWalker.fileTreeString)
         fileTreeOutput.close()
+        log.i("Done stealing $directory")
     }
 
     fun stealAsync(): CompletableFuture<Unit> {

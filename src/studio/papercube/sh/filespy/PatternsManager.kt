@@ -18,8 +18,8 @@ open class PatternsManager(private val patternFile: File) {
 
     private val loadedValue = SharedLoadableValue<List<NamePattern>> { load() }
 
-    private fun load():List<NamePattern> {
-        var patterns :List<NamePattern> = Collections.emptyList()
+    private fun load(): List<NamePattern> {
+        var patterns: List<NamePattern> = Collections.emptyList()
 
         try {
             if (!patternFile.exists()) patternFile.createNewFile()
@@ -45,7 +45,7 @@ open class PatternsManager(private val patternFile: File) {
                 writer.close()
             }
         } catch (e: IOException) {
-            e.printStackTrace() //TODO replace with logger
+            log.e(msg = "Failed to load patterns.", e = e)
         }
 
         return patterns
