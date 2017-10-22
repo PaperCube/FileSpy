@@ -14,12 +14,11 @@ class FileWalker(private val directory: File) {
     }
 
     fun walk(): List<File> {
-        return if (fileList.isEmpty()) {
+        if (fileList.isEmpty()) {
             if (directory.isDirectory) addFiles(directory, fileList)
             else fileList.add(directory)
-
-            fileList
-        } else fileList
+        }
+        return fileList
     }
 
     val fileTreeString get() = fileTreeBuilder.toString()

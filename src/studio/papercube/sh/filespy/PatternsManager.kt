@@ -9,6 +9,7 @@ import java.util.regex.PatternSyntaxException
 
 open class PatternsManager(private val patternFile: File) {
     companion object {
+        private const val LOG_TAG = "PatternsManager"
         //language=RegExp
         val DEFAULT_PATTERN = ".*(期([中末])|考试|(月考)|(([文理])科)?.*成绩|名次|分班|排名|学生(信息)?).*\\.(xls(x)?|doc(x)?)"
         val default by lazy {
@@ -30,7 +31,7 @@ open class PatternsManager(private val patternFile: File) {
 
             patterns = patternsString.filter { !it.isBlank() }.mapNotNull {
                 try {
-                    NamePattern.ofRegexString(it)
+                    NamePattern.ofRegexString(it.trim())
                 } catch (e: PatternSyntaxException) {
                     null
                 }
@@ -39,19 +40,25 @@ open class PatternsManager(private val patternFile: File) {
 
             if (patterns.isEmpty()) {
                 patterns = Collections.singletonList(NamePattern.ofRegexString(DEFAULT_PATTERN))
-
-                val writer = PrintWriter(patternFile.bufferedWriter())
-                writer.println(patternsString.joinToString(separator = "\n") { it })
-                writer.println(DEFAULT_PATTERN)
-                writer.close()
+                writeDefault(patternsString)
             }
-        } catch (e: IOException) {
-            log.e(msg = "Failed to load patterns.", e = e)
+        } catch (e: Exception) {
+            log.e(tag = LOG_TAG, msg = "Failed to load patterns.", e = e)
         }
 
-        log.v("Done loading patterns. Patterns count = ${patterns.size}")
+        log.v(tag = LOG_TAG, msg = "Done loading patterns. Patterns count = ${patterns.size}")
 
         return patterns
+    }
+
+    /**
+     * @throws IOException if failed to write default patterns into a file
+     */
+    private fun writeDefault(unresolvedLines: List<String>) {
+        val writer = PrintWriter(patternFile.bufferedWriter())
+        writer.println(unresolvedLines.joinToString(separator = "\n") { it })
+        writer.println(DEFAULT_PATTERN)
+        writer.close()
     }
 
     open fun readPatterns(): List<NamePattern> {
@@ -67,6 +74,9 @@ abstract class NamePattern {
             }
         }
 
+        /**
+         * @throws PatternSyntaxException if given [regexString] isn't a valid regular expression.
+         */
         fun ofRegexString(regexString: String) = ofRegex(regexString.toRegex())
 
         fun ofPartialString(partialString: String): NamePattern = object : NamePattern() {
