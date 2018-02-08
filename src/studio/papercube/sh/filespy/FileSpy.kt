@@ -23,7 +23,7 @@ abstract class FileSpy constructor(para: Parameter) {
     class Daemon(para: Parameter) : FileSpy(para) {
         val properties = ConfigParameters.instance
 
-        val driverDetector: DriverDetector = DriverDetector(insertListener = {
+        val driverDetector: DriverDetector = DriverDetector(gainAccessListener = {
             FileTheft(it).stealAsync()
         })
 

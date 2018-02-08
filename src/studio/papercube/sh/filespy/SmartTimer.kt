@@ -5,7 +5,7 @@ import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
 class SmartTimer(interval: Long, private val task: SmartTimer.() -> Unit) {
-    val lock = ReentrantLock()
+    private val lock = ReentrantLock()
 
     var interval = interval
         set(value) {
