@@ -11,9 +11,9 @@ open class PatternsManager(private val patternFile: File) {
     companion object {
         private const val LOG_TAG = "PatternsManager"
         //language=RegExp
-        val DEFAULT_PATTERN = ".*(期([中末])|考试|(月考)|(([文理])科)?.*成绩|名次|分班|排名|学生(信息)?).*\\.(xls(x)?|doc(x)?)"
+        const val DEFAULT_PATTERN = ".*(期([中末])|考试|(月考)|(([文理])科)?.*成绩|名次|分班|排名|学生(信息)?).*\\.(xls(x)?|doc(x)?)"
         val default by lazy {
-            log.i("Initializing patterns manager")
+            log.i(LOG_TAG, "Initializing patterns manager")
             PatternsManager(Environment.environment.getPatternsStoreFile())
         }
     }

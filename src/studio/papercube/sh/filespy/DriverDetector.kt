@@ -8,6 +8,10 @@ class DriverDetector @JvmOverloads constructor(private val interval: Long = 1000
                                                val removeListener: ((File) -> Unit)? = null,
                                                val gainAccessListener: ((File) -> Unit)? = null,
                                                val loseAccessListener: ((File) -> Unit)? = null) {
+    companion object {
+        private const val LOG_TAG = "DriverDetector"
+    }
+
     private var lastCheck: List<File>
     private var lastAccessibleDirectories: List<File>
 
@@ -21,21 +25,21 @@ class DriverDetector @JvmOverloads constructor(private val interval: Long = 1000
         val accessibleRootFolders = rootFolders.filter(this@DriverDetector::canReadDirectory)
 
         rootFolders.filter { it !in lastCheck }.forEach {
-            log.v("Detected new insertion ${it.absolutePath}")
+            log.v(LOG_TAG, "Detected new insertion ${it.absolutePath}")
             insertListener?.invoke(it)
         } //newly inserted
         lastCheck.filter { it !in rootFolders }.forEach {
-            log.v("Detected new removal ${it.absolutePath}")
+            log.v(LOG_TAG, "Detected new removal ${it.absolutePath}")
             removeListener?.invoke(it)
         } //newly removed
 
         accessibleRootFolders.filter { it !in lastAccessibleDirectories }.forEach {
-            log.v("Gained access to ${it.absolutePath}")
+            log.v(LOG_TAG, "Gained access to ${it.absolutePath}")
             gainAccessListener?.invoke(it)
         }
 
         lastAccessibleDirectories.filter { it !in accessibleRootFolders }.forEach {
-            log.v("Lost access to ${it.absolutePath}")
+            log.v(LOG_TAG, "Lost access to ${it.absolutePath}")
             loseAccessListener?.invoke(it)
         }
 

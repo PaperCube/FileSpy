@@ -71,7 +71,7 @@ class FileTheft(val directory: File) : Theft {
                 treeWriter.write(fileWalker.fileTreeString)
             }
         } catch (e: Exception) {
-            log.e(msg = "Failed to write file tree.", e = e)
+            log.e("FileTheft.FileTreeWriter", msg = "Failed to write file tree.", e = e)
         }
 
         log.i(LOG_TAG, "Done stealing $directory. " +
