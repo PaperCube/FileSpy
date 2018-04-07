@@ -25,8 +25,8 @@ class FileWalker(private val directory: File) {
 
     private fun addFiles(dir: File, toList: MutableList<File>, depth: Int = 0) {
         try {
-            dir.listFiles()
-                    .partition(File::isDirectory)
+            val files = dir.listFiles() ?: throw IllegalStateException("Cannot list files in ${dir.absolutePath}")
+            files.partition(File::isDirectory)
                     .let { (directories, files) ->
                         toList.addAll(files)
 
@@ -43,6 +43,7 @@ class FileWalker(private val directory: File) {
                     }
         } catch (e: Throwable) {
             exceptions.add(e)
+            if (takeDownFileTree) fileTreeBuilder.putException(e, depth)
         }
     }
 
@@ -54,9 +55,14 @@ class FileWalker(private val directory: File) {
         private val stringBuilder = StringBuilder()
         var treeItemPrefix = " | "
 
+        fun putPadding(depth: Int) = apply {
+            stringBuilder.appendRepeatedly(treeItemPrefix, depth)
+        }
+
         fun putFile(file: File, depth: Int) {
-            stringBuilder.appendRepeatedly(treeItemPrefix, depth).append(file.name)
-            if(file.isDirectory) stringBuilder.append(" : [DIR]")
+            putPadding(depth)
+            stringBuilder.append(file.name)
+            if (file.isDirectory) stringBuilder.append(" : [DIR]")
             stringBuilder.appendln()
         }
 
@@ -64,6 +70,15 @@ class FileWalker(private val directory: File) {
             for (i in 1..count) {
                 append(content)
             }
+        }
+
+        fun appendln(str: String) = apply {
+            stringBuilder.appendln("*$str")
+        }
+
+        fun putException(e: Throwable, depth: Int) = apply {
+            putPadding(depth)
+            appendln(e.toString())
         }
 
         override fun toString(): String {

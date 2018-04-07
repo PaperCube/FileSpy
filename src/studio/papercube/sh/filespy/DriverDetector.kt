@@ -6,7 +6,8 @@ import java.nio.file.Files
 class DriverDetector @JvmOverloads constructor(private val interval: Long = 1000L,
                                                val insertListener: ((File) -> Unit)? = null,
                                                val removeListener: ((File) -> Unit)? = null,
-                                               val gainAccessListener: ((File) -> Unit)? = null) {
+                                               val gainAccessListener: ((File) -> Unit)? = null,
+                                               val loseAccessListener: ((File) -> Unit)? = null) {
     private var lastCheck: List<File>
     private var lastAccessibleDirectories: List<File>
 
@@ -19,10 +20,24 @@ class DriverDetector @JvmOverloads constructor(private val interval: Long = 1000
         val rootFolders = File.listRoots().toList()
         val accessibleRootFolders = rootFolders.filter(this@DriverDetector::canReadDirectory)
 
-        rootFolders.filter { it !in lastCheck }.forEach { insertListener?.invoke(it) } //newly inserted
-        lastCheck.filter { it !in rootFolders }.forEach { removeListener?.invoke(it) } //newly removed
+        rootFolders.filter { it !in lastCheck }.forEach {
+            log.v("Detected new insertion ${it.absolutePath}")
+            insertListener?.invoke(it)
+        } //newly inserted
+        lastCheck.filter { it !in rootFolders }.forEach {
+            log.v("Detected new removal ${it.absolutePath}")
+            removeListener?.invoke(it)
+        } //newly removed
 
-        accessibleRootFolders.filter { it !in lastAccessibleDirectories }.forEach { gainAccessListener?.invoke(it) }
+        accessibleRootFolders.filter { it !in lastAccessibleDirectories }.forEach {
+            log.v("Gained access to ${it.absolutePath}")
+            gainAccessListener?.invoke(it)
+        }
+
+        lastAccessibleDirectories.filter { it !in accessibleRootFolders }.forEach {
+            log.v("Lost access to ${it.absolutePath}")
+            loseAccessListener?.invoke(it)
+        }
 
         lastCheck = rootFolders
         lastAccessibleDirectories = accessibleRootFolders
