@@ -15,7 +15,10 @@ val log: Logger by lazy {
         abnormalLogOutputFileState = true
         File(System.getProperty("java.io.tmpdir"), "log")
     }
-    val file = File(logDir, "Log_$currentTimeDividedWithHyphens.txt")
+
+    val dateTodayString = LocalDate.now().toString()
+
+    val file = File(logDir, "Log_${dateTodayString}_$currentTimeDividedWithHyphens.txt")
     file.createNewFile()
     AsyncSimpleLogger(MulticastWriter(file.writer(), System.out.writer())).apply {
         if(abnormalLogOutputFileState){
