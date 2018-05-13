@@ -1,6 +1,8 @@
 package studio.papercube.sh.filespy
 
 import java.io.File
+import java.nio.file.Files
+import java.nio.file.Path
 
 class FileWalker(private val directory: File) {
     private val fileList = ArrayList<File>()
@@ -25,7 +27,17 @@ class FileWalker(private val directory: File) {
 
     private fun addFiles(dir: File, toList: MutableList<File>, depth: Int = 0) {
         try {
-            val files = dir.listFiles() ?: throw IllegalStateException("Cannot list files in ${dir.absolutePath}")
+            val path = dir.toPath()
+//            log.i("Adding files in $dir")
+            if(Files.isSymbolicLink(path)){
+//                log.w("Detected symlink $path")
+                if (takeDownFileTree) {
+                    fileTreeBuilder.putSymbolicIndication(Files.readSymbolicLink(path), depth)
+                }
+                return
+            }
+
+            val files = dir.listFiles() ?: throw FileListDenied(dir)
             files.partition(File::isDirectory)
                     .let { (directories, files) ->
                         toList.addAll(files)
@@ -73,12 +85,17 @@ class FileWalker(private val directory: File) {
         }
 
         fun appendln(str: String) = apply {
-            stringBuilder.appendln("*$str")
+            stringBuilder.appendln("*** $str ***")
         }
 
         fun putException(e: Throwable, depth: Int) = apply {
             putPadding(depth)
             appendln(e.toString())
+        }
+
+        fun putSymbolicIndication(to:Path, depth:Int) = apply {
+            putPadding(depth)
+            appendln("symlink => $to")
         }
 
         override fun toString(): String {

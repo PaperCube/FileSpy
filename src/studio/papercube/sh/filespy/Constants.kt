@@ -3,7 +3,7 @@ package studio.papercube.sh.filespy
 import java.util.concurrent.ConcurrentHashMap
 
 //Build info
-const val VERSION = "0.3.5"
+const val VERSION = "0.4"
 
 
 //Internal constants
