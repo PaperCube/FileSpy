@@ -1,13 +1,15 @@
 package studio.papercube.sh.filespy
 
 import java.io.File
+import java.io.StringWriter
 import java.nio.file.Files
 import java.nio.file.Path
 
 class FileWalker(private val directory: File) {
     private val fileList = ArrayList<File>()
     private val exceptions = ArrayList<Throwable>()
-    private val fileTreeBuilder = FileTreeBuilder()
+    private val stringWriter = StringWriter()
+    private val xmlFileTreeWriter = XMLStyleFileTreeWriter(stringWriter)
 
     var takeDownFileTree = true
 
@@ -23,17 +25,15 @@ class FileWalker(private val directory: File) {
         return fileList
     }
 
-    val fileTreeString get() = fileTreeBuilder.toString()
+    val fileTreeString get() = stringWriter.toString()
 
     private fun addFiles(dir: File, toList: MutableList<File>, depth: Int = 0) {
         try {
             val path = dir.toPath()
 //            log.i("Adding files in $dir")
-            if(Files.isSymbolicLink(path)){
+            if (Files.isSymbolicLink(path)) {
 //                log.w("Detected symlink $path")
-                if (takeDownFileTree) {
-                    fileTreeBuilder.putSymbolicIndication(Files.readSymbolicLink(path), depth)
-                }
+                writeFileTree { putSymlink(Files.readSymbolicLink(path)) }
                 return
             }
 
@@ -42,20 +42,21 @@ class FileWalker(private val directory: File) {
                     .let { (directories, files) ->
                         toList.addAll(files)
 
-                        if (takeDownFileTree) {
+                        writeFileTree {
                             for (file in files) {
-                                fileTreeBuilder.putFile(file, depth)
+                                putFile(file)
                             }
                         }
 
                         for (directory in directories) {
-                            if (takeDownFileTree) fileTreeBuilder.putFile(directory, depth)
+                            writeFileTree { beginDirectory(directory) }
                             addFiles(directory, toList, depth + 1)
+                            writeFileTree { endDirectory(directory) }
                         }
                     }
         } catch (e: Throwable) {
             exceptions.add(e)
-            if (takeDownFileTree) fileTreeBuilder.putException(e, depth)
+            writeFileTree { putException(e) }
         }
     }
 
@@ -63,6 +64,14 @@ class FileWalker(private val directory: File) {
         return exceptions
     }
 
+    private inline fun writeFileTree(action: XMLStyleFileTreeWriter.() -> Unit) {
+        if (takeDownFileTree) {
+            xmlFileTreeWriter.action()
+        }
+    }
+
+    @Suppress("unused")
+    @Deprecated("Deprecated. Use XMLStyleFileTreeWriter instead")
     class FileTreeBuilder {
         private val stringBuilder = StringBuilder()
         var treeItemPrefix = " | "
@@ -93,7 +102,7 @@ class FileWalker(private val directory: File) {
             appendln(e.toString())
         }
 
-        fun putSymbolicIndication(to:Path, depth:Int) = apply {
+        fun putSymbolicIndication(to: Path, depth: Int) = apply {
             putPadding(depth)
             appendln("symlink => $to")
         }
