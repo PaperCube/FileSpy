@@ -12,6 +12,7 @@ Start this program, insert your removable drive, then everything will be scanned
 # Dependencies of compilation
 * [libPaperCube-JavaSE](https://github.com/PaperCube/libPaperCube-JavaSE)
 * Kotlin
+* JUnit 4 (For tests)
 
 # Customizations and data storage
 Everything including stolen files and settings are stored in C:\ProgramData\Local\FileSpy. MacOS is currently unsupported while several modifications are needed to make it work on it.

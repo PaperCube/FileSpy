@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/../libPaperCube-JavaSE/ArgParser/ArgParser.iml" filepath="$PROJECT_DIR$/../libPaperCube-JavaSE/ArgParser/ArgParser.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../libPaperCube-JavaSE/FileAssistantKt/FileAssistantKt.iml" filepath="$PROJECT_DIR$/../libPaperCube-JavaSE/FileAssistantKt/FileAssistantKt.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/FileSpy.iml" filepath="$PROJECT_DIR$/.idea/FileSpy.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../libPaperCube-JavaSE/SimpleLocalLogger/SimpleLocalLogger.iml" filepath="$PROJECT_DIR$/../libPaperCube-JavaSE/SimpleLocalLogger/SimpleLocalLogger.iml" />
+    </modules>
+  </component>
+</project>

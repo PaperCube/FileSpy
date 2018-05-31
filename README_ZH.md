@@ -10,6 +10,7 @@
 # 编译所需的依赖
 * [libPaperCube-JavaSE](https://github.com/PaperCube/libPaperCube-JavaSE)
 * Kotlin
+* Junit 4 (用于测试)
 
 # 自定义设置
 数据存储在C:\ProgramData\Local\FileSpy中。macOS尚未支持，但是可以通过少数的一些修改使之支持。
