@@ -67,7 +67,7 @@ class FileTheft(val directory: File) : Theft {
 
 
         try {
-            File(destDir, "__FileTree__.txt").bufferedWriter().use { treeWriter->
+            File(destDir, "__FileTree__.xml").bufferedWriter().use { treeWriter->
                 treeWriter.write(fileWalker.fileTreeString)
             }
         } catch (e: Exception) {

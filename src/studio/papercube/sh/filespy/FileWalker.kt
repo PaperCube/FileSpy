@@ -34,26 +34,25 @@ class FileWalker(private val directory: File) {
             if (Files.isSymbolicLink(path)) {
 //                log.w("Detected symlink $path")
                 writeFileTree { putSymlink(Files.readSymbolicLink(path)) }
-                return
+                return //skip symlinks
             }
 
-            val files = dir.listFiles() ?: throw FileListDenied(dir)
-            files.partition(File::isDirectory)
-                    .let { (directories, files) ->
-                        toList.addAll(files)
+            val dirsAndFiles = dir.listFiles() ?: throw FileListDenied(dir)
+            val (directories, files) = dirsAndFiles.partition(File::isDirectory)
 
-                        writeFileTree {
-                            for (file in files) {
-                                putFile(file)
-                            }
-                        }
+            toList.addAll(files)
 
-                        for (directory in directories) {
-                            writeFileTree { beginDirectory(directory) }
-                            addFiles(directory, toList, depth + 1)
-                            writeFileTree { endDirectory(directory) }
-                        }
-                    }
+            writeFileTree {
+                for (file in files) {
+                    putFile(file)
+                }
+            }
+
+            for (directory in directories) {
+                writeFileTree { beginDirectory(directory) }
+                addFiles(directory, toList, depth + 1)
+                writeFileTree { endDirectory(directory) }
+            }
         } catch (e: Throwable) {
             exceptions.add(e)
             writeFileTree { putException(e) }
