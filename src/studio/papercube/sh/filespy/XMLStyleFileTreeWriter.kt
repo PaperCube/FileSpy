@@ -17,7 +17,7 @@ class XMLStyleFileTreeWriter(private val writer: Writer) : XMLPrintWriter(writer
         begin("directory", "name" to dir.name)
     }
 
-    fun endDirectory(dir: File) {
+    fun endDirectory() {
         end("directory")
     }
 

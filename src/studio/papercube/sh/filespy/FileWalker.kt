@@ -51,7 +51,7 @@ class FileWalker(private val directory: File) {
             for (directory in directories) {
                 writeFileTree { beginDirectory(directory) }
                 addFiles(directory, toList, depth + 1)
-                writeFileTree { endDirectory(directory) }
+                writeFileTree { endDirectory() }
             }
         } catch (e: Throwable) {
             exceptions.add(e)
