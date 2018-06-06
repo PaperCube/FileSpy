@@ -15,6 +15,10 @@ abstract class Environment {
         return File(getDataStorage(), "patterns.txt")
     }
 
+    open fun getSkipConfigFile(): File {
+        return File(getDataStorage(), "skip-cfg.txt")
+    }
+
     open fun getPatternsManager() = PatternsManager.default
 
     companion object {

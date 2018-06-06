@@ -8,7 +8,7 @@ class SharedExecutorTest{
     @Test
     fun testExceptionHandling(){
         val future = sharedExecutor.submit {
-            Thread.currentThread().setUncaughtExceptionHandler { t, e ->
+            Thread.currentThread().setUncaughtExceptionHandler { _, e ->
                 log.e(e = e, msg = "Exception caught by uncaught exception handler")
             }
             log.i("Preparing to throw an exception.")

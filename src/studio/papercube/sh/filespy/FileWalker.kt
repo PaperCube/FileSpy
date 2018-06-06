@@ -5,7 +5,8 @@ import java.io.StringWriter
 import java.nio.file.Files
 import java.nio.file.Path
 
-class FileWalker(private val directory: File) {
+class FileWalker(private val directory: File,
+                 private val skipCheck: SkipCheck? = null) {
     private val fileList = ArrayList<File>()
     private val exceptions = ArrayList<Throwable>()
     private val stringWriter = StringWriter()
@@ -29,6 +30,15 @@ class FileWalker(private val directory: File) {
 
     private fun addFiles(dir: File, toList: MutableList<File>, depth: Int = 0) {
         try {
+            if (skipCheck?.shouldSkip(dir) == true) {
+                log.i("Skipping $dir")
+                writeFileTree {
+                    begin("skip", "directory" to dir)
+                    end()
+                }
+                return
+            }
+
             val path = dir.toPath()
 //            log.i("Adding files in $dir")
             if (Files.isSymbolicLink(path)) {

@@ -12,6 +12,7 @@ class SharedLoadableValueTest {
     private val random = Random()
     private val randomLock = ReentrantLock()
 
+    @Suppress("UNUSED_VARIABLE")
     @Test
     fun get() {
         val atomicInteger = AtomicInteger(0)

