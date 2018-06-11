@@ -4,6 +4,7 @@ import studio.papercube.sh.filespy.EncodingUtil.decodeBase64String
 import studio.papercube.sh.filespy.EncodingUtil.decodeHexString
 import studio.papercube.sh.filespy.EncodingUtil.encodeBase64String
 import studio.papercube.sh.filespy.concurrent.SharedLoadableValue
+import java.io.Reader
 import java.security.MessageDigest
 import java.util.*
 import kotlin.collections.ArrayList
@@ -37,23 +38,30 @@ object SkipManagement {
             log.i("Refreshing skip-cfg")
             val file = Environment.environment.getSkipConfigFile()
             if (!file.exists()) file.createNewFile()
-            val lines = file.readLines()
-            resolve(lines)
+            resolve(file.bufferedReader())
             return currentSkips
         }
 
-        private fun resolve(commands: List<String>) {
+        private fun resolve(reader: Reader) {
             var skipAll = false
             var skipNone = false
             val skipVolumes = ArrayList<ByteArray>()
-            for (command in commands) {
-                val list = command.split(' ', limit = 0)
-                val cmdName = list.getOrNull(0)?.toLowerCase()
-                val cmdArg = list.getOrNull(1)
-                when (cmdName) {
-                    "skip-all" -> skipAll = true
-                    "skip-none" -> skipNone = true
-                    "skip-volume" -> tryAddEncodedByteArray(skipVolumes, cmdArg, cmdName, "hex")
+            reader.useLines { stringSequence ->
+                for (command in stringSequence) {
+                    val list = command.substringBefore('#')
+                            .trim()
+                            .takeUnless { it.isEmpty() }
+                            ?.split(' ', limit = 0) ?: continue
+                    val cmdName = list.getOrNull(0)?.toLowerCase()
+                    val cmdArg = list.getOrNull(1)
+                    when (cmdName) {
+                        "skip-all" -> skipAll = true
+                        "skip-none" -> skipNone = true
+                        "skip-volume" -> tryAddEncodedByteArray(skipVolumes, cmdArg, cmdName, "hex")
+                        else -> {
+                            log.w("Unrecognized command $command")
+                        }
+                    }
                 }
             }
 
@@ -77,7 +85,7 @@ object SkipManagement {
                     }
                     list.add(decoded)
                 } else {
-                    log.e("Cannot resolve $cmdName: No arguments supplied but 1 required")
+                    log.w("Cannot resolve $cmdName: No arguments supplied but 1 required")
                 }
             } catch (e: Exception) {
                 log.e("Cannot resolve $cmdName: unable to parse argument $cmdArg as $cmdArgType: $e")
