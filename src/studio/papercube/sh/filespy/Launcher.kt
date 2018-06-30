@@ -7,7 +7,16 @@ private const val LOG_TAG_LAUNCHER = "Launcher"
 fun main(args: Array<String>) {
     Thread.setDefaultUncaughtExceptionHandler { thread, exception ->
         val threadName = thread.name
-        log.e("DefaultUncaughtExceptionHandler", "Thread $threadName crashed.", exception)
+        val msg = "Thread $threadName crashed unhandled."
+        try {
+            log.e("DefaultUncaughtExceptionHandler", msg, exception)
+        } catch (e: Throwable) {
+            System.err.println("An internal error encountered inside UncaughtExceptionHandler of thread $threadName")
+            System.err.println(msg)
+            e.addSuppressed(exception)
+            e.printStackTrace()
+            System.err.println()
+        }
     }
 
     Runtime.getRuntime().addShutdownHook(Thread {
