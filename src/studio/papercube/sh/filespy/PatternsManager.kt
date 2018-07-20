@@ -18,10 +18,10 @@ open class PatternsManager(private val patternFile: File) {
         }
     }
 
-    private val loadedValue = SharedLoadableValue<List<NamePattern>> { load() }
+    private val loadedValue = SharedLoadableValue<List<FilePattern>> { load() }
 
-    private fun load(): List<NamePattern> {
-        var patterns: List<NamePattern> = Collections.emptyList()
+    private fun load(): List<FilePattern> {
+        var patterns: List<FilePattern> = Collections.emptyList()
 
         try {
             if (!patternFile.exists()) patternFile.createNewFile()
@@ -31,7 +31,7 @@ open class PatternsManager(private val patternFile: File) {
 
             patterns = patternsString.filter { !it.isBlank() }.mapNotNull {
                 try {
-                    NamePattern.ofRegexString(it.trim())
+                    FilePattern.ofRegexString(it.trim())
                 } catch (e: PatternSyntaxException) {
                     null
                 }
@@ -39,7 +39,7 @@ open class PatternsManager(private val patternFile: File) {
 
 
             if (patterns.isEmpty()) {
-                patterns = Collections.singletonList(NamePattern.ofRegexString(DEFAULT_PATTERN))
+                patterns = Collections.singletonList(FilePattern.ofRegexString(DEFAULT_PATTERN))
                 writeDefault(patternsString)
             }
         } catch (e: Exception) {
@@ -47,6 +47,8 @@ open class PatternsManager(private val patternFile: File) {
         }
 
         log.v(tag = LOG_TAG, msg = "Done loading patterns. Patterns count = ${patterns.size}")
+//        val patternTypes = patterns.joinToString("\n")
+//        log.v(LOG_TAG, "Pattern type: \n$patternTypes")
 
         return patterns
     }
@@ -61,30 +63,58 @@ open class PatternsManager(private val patternFile: File) {
         writer.close()
     }
 
-    open fun readPatterns(): List<NamePattern> {
+    open fun readPatterns(): List<FilePattern> {
         return loadedValue.get()
     }
 }
 
-abstract class NamePattern {
+abstract class FilePattern {
     companion object {
-        fun ofRegex(regex: Regex): NamePattern = object : NamePattern() {
-            override fun matchesWithName(name: String): Boolean {
-                return regex.matches(name)
-            }
-        }
-
         /**
          * @throws PatternSyntaxException if given [regexString] isn't a valid regular expression.
          */
-        fun ofRegexString(regexString: String) = ofRegex(regexString.toRegex())
-
-        fun ofPartialString(partialString: String): NamePattern = object : NamePattern() {
-            override fun matchesWithName(name: String): Boolean {
-                return partialString in name
+        fun ofRegexString(regexString: String): FilePattern {
+            val regexStringTrimmed = regexString.trim()
+            when {
+                regexStringTrimmed.endsWith('/') -> { // represents a directory
+                    val regex = regexString.removeSuffix("/").regexIgnoringCase()
+                    return object : FilePattern() {
+                        override fun matchesWithFile(file: File): Boolean {
+                            return file.absoluteFile.invariantSeparatorsPath.contains(regex) ||
+                                    (file.isDirectory && (file.name + '/').matches(regex))
+                        }
+                    }
+                }
+                regexStringTrimmed.contains('/') -> { //represents a file in a specified directory
+                    val regex = regexString.regexIgnoringCase()
+                    return object : FilePattern() {
+                        override fun matchesWithFile(file: File): Boolean {
+                            return file.absoluteFile.invariantSeparatorsPath.contains(regex)
+                        }
+                    }
+                }
+                else -> {
+                    val regex = regexString.regexIgnoringCase()
+                    return object : FilePattern() {
+                        override fun matchesWithFile(file: File): Boolean {
+                            return file.name.matches(regex)
+                        }
+                    }
+                }
             }
         }
+
+        @JvmStatic
+        private fun String.regexIgnoringCase(): Regex {
+            return Regex(this, RegexOption.IGNORE_CASE)
+        }
+
     }
 
-    abstract fun matchesWithName(name: String): Boolean
+    @Deprecated("This method isn't designed to handle directories. Use matchesWithFile instead", ReplaceWith(""))
+    open fun matchesWithName(name: String): Boolean {
+        return matchesWithFile(File(name))
+    }
+
+    abstract fun matchesWithFile(file: File): Boolean
 }

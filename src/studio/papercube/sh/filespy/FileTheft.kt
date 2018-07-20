@@ -65,7 +65,7 @@ class FileTheft(private val baseDirectory: File) : Theft {
 
         val stealResults: Map<Int, Long> = completeFileList
                 .stream()
-                .filter { fileToCheck -> patterns.any { pattern -> pattern.matchesWithName(fileToCheck.name) } }
+                .filter { fileToCheck -> patterns.any { pattern -> pattern.matchesWithFile(fileToCheck) } }
                 .map { if (copyRelatively(it, baseDirectory, destDir)) STEAL_RESULT_SUCCESS else STEAL_RESULT_FAILURE }
                 .collect(Collectors.groupingBy({ value: Int -> value }, Collectors.counting()))
 
