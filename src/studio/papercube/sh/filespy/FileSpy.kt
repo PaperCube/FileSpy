@@ -75,7 +75,7 @@ abstract class FileSpy constructor(para: Parameter) {
                     println("$size files matches.")
                     for ((index, fileToSteal) in walkResult.withIndex()) {
                         println("Copying ${index + 1} of $size files")
-                        FileTheft.stealSingleFile(fileToSteal, destination)
+                        FileTheft.copyRelatively(fileToSteal, file, destination)
                     }
                 } catch (e: Exception) {
                     println("Uncaught exception $e")
